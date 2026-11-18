@@ -1,0 +1,1 @@
+{"name":"goalvault","version":"1.0.0","private":true,"type":"module","scripts":{"build":"node build.mjs","test":"node --test test/contract.test.mjs","start":"node serve.mjs"},"dependencies":{"ethers":"6.15.0"},"devDependencies":{"solc":"0.8.30","ganache":"7.9.2"}}

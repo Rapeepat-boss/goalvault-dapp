@@ -1,0 +1,24 @@
+{
+  "language": "Solidity",
+  "sources": {
+    "GoalVault.sol": {
+      "content": "// SPDX-License-Identifier: MIT\npragma solidity 0.8.30;\n\n/// @title GoalVault - permissionless personal savings goals\n/// @notice Educational testnet application. No owner, allowlist, fees or lock period.\ncontract GoalVault {\n    struct Goal { string name; uint256 target; uint256 balance; uint256 deposited; }\n    mapping(address => Goal[]) private goals;\n    bool private entered;\n    event GoalCreated(address indexed owner, uint256 indexed goalId, string name, uint256 target);\n    event Deposited(address indexed owner, uint256 indexed goalId, uint256 amount);\n    event Withdrawn(address indexed owner, uint256 indexed goalId, uint256 amount);\n\n    modifier nonReentrant() {\n        require(!entered, \"Reentrant call\");\n        entered = true;\n        _;\n        entered = false;\n    }\n\n    function createGoal(string calldata name, uint256 target) external {\n        require(bytes(name).length > 0 && bytes(name).length <= 120, \"Invalid name\");\n        require(target > 0, \"Target must be positive\");\n        uint256 id = goals[msg.sender].length;\n        goals[msg.sender].push(Goal(name, target, 0, 0));\n        emit GoalCreated(msg.sender, id, name, target);\n    }\n\n    function deposit(uint256 goalId) external payable {\n        require(goalId < goals[msg.sender].length, \"Goal not found\");\n        require(msg.value > 0, \"Deposit must be positive\");\n        Goal storage goal = goals[msg.sender][goalId];\n        goal.balance += msg.value;\n        goal.deposited += msg.value;\n        emit Deposited(msg.sender, goalId, msg.value);\n    }\n\n    function withdraw(uint256 goalId, uint256 amount) external nonReentrant {\n        require(goalId < goals[msg.sender].length, \"Goal not found\");\n        Goal storage goal = goals[msg.sender][goalId];\n        require(amount > 0 && amount <= goal.balance, \"Invalid withdrawal\");\n        goal.balance -= amount;\n        (bool success,) = payable(msg.sender).call{value: amount}(\"\");\n        require(success, \"Transfer failed\");\n        emit Withdrawn(msg.sender, goalId, amount);\n    }\n\n    function goalCount(address owner) external view returns (uint256) { return goals[owner].length; }\n    function getGoal(address owner, uint256 goalId) external view returns (Goal memory) {\n        require(goalId < goals[owner].length, \"Goal not found\");\n        return goals[owner][goalId];\n    }\n    function checkBalance(uint256 goalId) external view returns (uint256) {\n        require(goalId < goals[msg.sender].length, \"Goal not found\");\n        return goals[msg.sender][goalId].balance;\n    }\n}\n"
+    }
+  },
+  "settings": {
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "evmVersion": "paris",
+    "outputSelection": {
+      "*": {
+        "*": [
+          "abi",
+          "evm.bytecode.object",
+          "evm.deployedBytecode.object"
+        ]
+      }
+    }
+  }
+}
